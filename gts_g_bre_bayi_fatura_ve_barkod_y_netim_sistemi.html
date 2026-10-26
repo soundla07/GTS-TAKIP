@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTS - Gübre Bayi Fatura ve Barkod Yönetim Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-200">
+                        <i data-lucide="sprout" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-slate-900 leading-tight">GTS Gübre Bayi Sistemi</h1>
+                        <p class="text-xs text-slate-500 font-medium">Barkod & Fatura Takip Portalı</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Tab Links -->
+                <nav class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                    <button type="button" onclick="switchTab('tab-sales')" id="nav-tab-sales" class="tab-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150">
+                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                        Otomatik Satış
+                    </button>
+                    <button type="button" onclick="switchTab('tab-stock')" id="nav-tab-stock" class="tab-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150">
+                        <i data-lucide="boxes" class="w-4 h-4"></i>
+                        Stok & GTS Barkod
+                    </button>
+                    <button type="button" onclick="switchTab('tab-history')" id="nav-tab-history" class="tab-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Satış Geçmişi & Rapor
+                    </button>
+                </nav>
+
+                <!-- Status Badge -->
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        GTS Çevrimiçi
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Bar -->
+        <div class="md:hidden flex border-t border-slate-200 bg-slate-50 px-2 py-1.5 justify-around">
+            <button type="button" onclick="switchTab('tab-sales')" id="mobile-tab-sales" class="tab-btn-mobile flex flex-col items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                Satış
+            </button>
+            <button type="button" onclick="switchTab('tab-stock')" id="mobile-tab-stock" class="tab-btn-mobile flex flex-col items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg">
+                <i data-lucide="boxes" class="w-4 h-4"></i>
+                Stok
+            </button>
+            <button type="button" onclick="switchTab('tab-history')" id="mobile-tab-history" class="tab-btn-mobile flex flex-col items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                Geçmiş
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: OTOMATİK SATIŞ & HIZLI BARKOD OKUTMA -->
+        <!-- ========================================== -->
+        <div id="tab-sales" class="tab-content space-y-6">
+            
+            <!-- Live Global Stats Panel -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Toplam Ürün Çeşidi</p>
+                        <h3 id="stat-total-varieties" class="text-xl font-bold text-slate-800">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Mevcut Kalan Stok</p>
+                        <h3 id="stat-available-stock" class="text-xl font-bold text-emerald-600">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500">Toplam Satılan Adet</p>
+                        <h3 id="stat-total-sold" class="text-xl font-bold text-amber-600">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                        <i data-lucide="pie-chart" class="w-6 h-6"></i>
+                    </div>
+                    <div class="w-full pr-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-xs font-medium text-slate-500">Doluluk Oranı</p>
+                            <span id="stat-occupancy-percent" class="text-xs font-bold text-purple-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div id="stat-occupancy-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Interactive Workspace -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Farmer Selection & Barcode Reader -->
+                <div class="lg:col-span-5 space-y-6">
+                    
+                    <!-- Farmer / Customer Selection Box -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <i data-lucide="user-check" class="w-5 h-5 text-emerald-600"></i>
+                            <h2 class="font-bold text-slate-800">Çiftçi / Müşteri Bilgisi</h2>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Çiftçi Adı Soyadı / Unvanı</label>
+                            <div class="relative">
+                                <input type="text" id="farmer-input" list="farmers-list" placeholder="Çiftçi adı yazın veya seçin..." 
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
+                                    oninput="this.value = toTrUppercase(this.value); handleFarmerChange();">
+                                <datalist id="farmers-list"></datalist>
+                                <div class="absolute right-3 top-2.5 text-slate-400 pointer-events-none">
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                                Barkod okutmaya başlamadan önce çiftçi seçilmesi zorunludur.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Fast Barcode Reader Input Box -->
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-md space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="scan-line" class="w-5 h-5 text-emerald-400 animate-pulse"></i>
+                                <h2 class="font-bold">Hızlı Barkod Okuyucu</h2>
+                            </div>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">SERİ OKUMA</span>
+                        </div>
+
+                        <form id="barcode-form" onsubmit="handleBarcodeScan(event)" class="space-y-3">
+                            <div>
+                                <label for="barcode-scanner-input" class="block text-xs text-slate-300 mb-1">GTS Barkod No / Karekod</label>
+                                <div class="relative">
+                                    <input type="text" id="barcode-scanner-input" autocomplete="off" placeholder="Barkodu okutun veya yazın..." 
+                                        class="w-full pl-10 pr-4 py-3 bg-slate-800/90 border border-slate-700 rounded-xl text-emerald-400 font-mono text-sm tracking-wider focus:ring-2 focus:ring-emerald-400 focus:outline-none transition-all placeholder:text-slate-500"
+                                        oninput="this.value = toTrUppercase(this.value);">
+                                    <i data-lucide="barcode" class="w-5 h-5 text-slate-500 absolute left-3 top-3.5"></i>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 transition-all">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                Sepete Ekle (ENTER)
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Cart View & Complete Sale Action -->
+                <div class="lg:col-span-7">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col h-full min-h-[480px]">
+                        
+                        <!-- Cart Header -->
+                        <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 rounded-t-2xl">
+                            <div class="flex items-center gap-2">
+                                <div class="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-bold text-slate-800">Çiftçi Geçici Sepeti</h2>
+                                    <p class="text-xs text-slate-500" id="current-cart-farmer-label">Seçili Çiftçi: <span class="font-semibold text-slate-700">Seçilmedi</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="copyCartToClipboard()" class="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-sm flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    Sepeti Kopyala
+                                </button>
+                                <button type="button" onclick="clearCurrentCart()" class="px-3 py-1.5 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center gap-1 transition-all">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    Temizle
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cart Items Container -->
+                        <div class="p-5 flex-1 overflow-y-auto max-h-[380px]" id="cart-items-container">
+                            <!-- Dynamic Cart Items -->
+                        </div>
+
+                        <!-- Cart Footer -->
+                        <div class="p-5 border-t border-slate-100 bg-slate-50/80 rounded-b-2xl flex items-center justify-between gap-4">
+                            <div>
+                                <p class="text-xs text-slate-500 font-medium">Sepetteki Ürün Adedi</p>
+                                <p class="text-xl font-bold text-slate-900" id="cart-total-count">0 Adet</p>
+                            </div>
+                            <button type="button" onclick="completeSale()" id="btn-complete-sale" disabled 
+                                class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-md shadow-emerald-200 flex items-center gap-2 transition-all">
+                                <i data-lucide="check-check" class="w-5 h-5"></i>
+                                SATIŞI TAMAMLA / SATIŞ YAP
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: STOK & GTS BARKOD YÖNETİMİ         -->
+        <!-- ========================================== -->
+        <div id="tab-stock" class="tab-content hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Batch Stock Entry Form -->
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i data-lucide="package-plus" class="w-5 h-5 text-emerald-600"></i>
+                        <h2 class="font-bold text-slate-800">Toplu GTS Stok & Barkod Ekle</h2>
+                    </div>
+
+                    <form id="add-stock-form" onsubmit="handleAddStock(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Ürün Grubu / Gübre Adı</label>
+                            <input type="text" id="stock-product-name" list="existing-products-list" placeholder="Örn: ÜRE %46, NİTRAT %26" required
+                                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
+                                oninput="this.value = toTrUppercase(this.value);">
+                            <datalist id="existing-products-list"></datalist>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-semibold text-slate-600">GTS Barkod Listesi (Alt alta, virgüllü veya boşluklu)</label>
+                                <span class="text-[10px] text-slate-400">Maks: 1000 Adet/Ürün</span>
+                            </div>
+                            <textarea id="stock-barcodes-textarea" rows="6" placeholder="Barkodları buraya yapıştırın veya yazın..." required
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
+                                oninput="this.value = toTrUppercase(this.value);"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-200 flex items-center justify-center gap-2 transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Stoklara Ekle
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Stock Actions & Live Search -->
+                <div class="lg:col-span-7 space-y-4 flex flex-col justify-between">
+                    <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <h3 class="text-lg font-bold">Depo Stok Veri Aktarımı</h3>
+                            <p class="text-xs text-emerald-100 max-w-md">Depoda bulunan tüm satılmamış (STOKTA / Yeşil) barkodları tek tıkla kopyalayarak harici sistemlerinize aktarabilirsiniz.</p>
+                        </div>
+                        <button type="button" onclick="copyAllAvailableBarcodes()" class="px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 font-bold text-xs rounded-xl shadow-md whitespace-nowrap flex items-center gap-2 transition-all">
+                            <i data-lucide="copy-check" class="w-4 h-4 text-emerald-600"></i>
+                            Kalan Tüm Stok Barkodlarını Kopyala
+                        </button>
+                    </div>
+
+                    <!-- Search Filter Bar -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+                        <input type="text" id="stock-search-input" placeholder="Ürün adı veya GTS Barkod No ile canlı ara..." 
+                            class="w-full bg-transparent text-sm font-medium focus:outline-none"
+                            oninput="renderStockCards()">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Stock Cards List -->
+            <div id="stock-cards-grid" class="grid grid-cols-1 gap-4">
+                <!-- Dynamic Stock Cards -->
+            </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: SATIŞ GEÇMİŞİ & GÜNLÜK FATURA RAPORU-->
+        <!-- ========================================== -->
+        <div id="tab-history" class="tab-content hidden space-y-6">
+            
+            <!-- History Filter Controls -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="filter" class="w-5 h-5 text-slate-500"></i>
+                    <h2 class="font-bold text-slate-800">Tarih Filtreleme</h2>
+                </div>
+
+                <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                    <button type="button" onclick="setHistoryFilter('all')" id="filter-all" class="history-filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">
+                        Tüm Zamanlar
+                    </button>
+                    <button type="button" onclick="setHistoryFilter('today')" id="filter-today" class="history-filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">
+                        Bugün
+                    </button>
+                    <button type="button" onclick="setHistoryFilter('week')" id="filter-week" class="history-filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">
+                        Son 7 Gün
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Sales Container -->
+            <div id="history-sales-list" class="space-y-4">
+                <!-- Dynamic Sales Cards -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /* ==========================================================================
+           1. CORE DATA STRUCTURE & CONSTANTS
+           ========================================================================== */
+        const MAX_PRODUCT_CAPACITY = 1000;
+
+        // Turkish character uppercasing helper
+        function toTrUppercase(str) {
+            if (!str) return '';
+            return str.replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase();
+        }
+
+        // Initial Sample Data for Instant Testing
+        const defaultStocks = [
+            {
+                id: 'prod_1',
+                name: 'ÜRE %46 GÜBRE',
+                capacity: 1000,
+                barcodes: [
+                    { code: 'GTS86900011122233', status: 'SATILDI', farmerName: 'AHMET YILMAZ', date: new Date().toISOString() },
+                    { code: 'GTS86900011122234', status: 'STOKTA', farmerName: null, date: null },
+                    { code: 'GTS86900011122235', status: 'STOKTA', farmerName: null, date: null }
+                ]
+            },
+            {
+                id: 'prod_2',
+                name: 'CAN %26 NİTRAT GÜBRE',
+                capacity: 1000,
+                barcodes: [
+                    { code: 'GTS86900044455566', status: 'STOKTA', farmerName: null, date: null },
+                    { code: 'GTS86900044455567', status: 'STOKTA', farmerName: null, date: null }
+                ]
+            }
+        ];
+
+        const defaultSales = [
+            {
+                id: 'sale_1',
+                farmerName: 'AHMET YILMAZ',
+                date: new Date().toISOString(),
+                items: [
+                    { barcode: 'GTS86900011122233', productName: 'ÜRE %46 GÜBRE', productId: 'prod_1' }
+                ]
+            }
+        ];
+
+        // Central State
+        let state = {
+            stocks: JSON.parse(localStorage.getItem('gts_stocks')) || defaultStocks,
+            cart: JSON.parse(localStorage.getItem('gts_cart')) || [],
+            sales: JSON.parse(localStorage.getItem('gts_sales')) || defaultSales,
+            selectedFarmer: localStorage.getItem('gts_selectedFarmer') || '',
+            historyFilter: 'all',
+            activeTab: 'tab-sales'
+        };
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            saveState();
+            switchTab('tab-sales');
+            renderAll();
+            
+            // Set Farmer Input if previously persisted
+            const farmerInput = document.getElementById('farmer-input');
+            if (farmerInput && state.selectedFarmer) {
+                farmerInput.value = state.selectedFarmer;
+            }
+        });
+
+        // Sync State to LocalStorage
+        function saveState() {
+            try {
+                localStorage.setItem('gts_stocks', JSON.stringify(state.stocks));
+                localStorage.setItem('gts_cart', JSON.stringify(state.cart));
+                localStorage.setItem('gts_sales', JSON.stringify(state.sales));
+                localStorage.setItem('gts_selectedFarmer', state.selectedFarmer);
+            } catch (err) {
+                console.error('LocalStorage error:', err);
+            }
+        }
+
+        /* ==========================================================================
+           2. TOAST NOTIFICATION SYSTEM
+           ========================================================================== */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            
+            let bgBg = 'bg-white';
+            let borderColor = 'border-slate-200';
+            let textColor = 'text-slate-800';
+            let iconName = 'info';
+            let iconColor = 'text-blue-500';
+
+            if (type === 'success') {
+                bgBg = 'bg-emerald-50';
+                borderColor = 'border-emerald-200';
+                textColor = 'text-emerald-900';
+                iconName = 'check-circle-2';
+                iconColor = 'text-emerald-600';
+            } else if (type === 'error') {
+                bgBg = 'bg-rose-50';
+                borderColor = 'border-rose-200';
+                textColor = 'text-rose-900';
+                iconName = 'alert-circle';
+                iconColor = 'text-rose-600';
+            } else if (type === 'warning') {
+                bgBg = 'bg-amber-50';
+                borderColor = 'border-amber-200';
+                textColor = 'text-amber-900';
+                iconName = 'alert-triangle';
+                iconColor = 'text-amber-600';
+            }
+
+            toast.className = `${bgBg} ${borderColor} ${textColor} border p-4 rounded-xl shadow-lg flex items-center gap-3 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 ${iconColor} shrink-0"></i>
+                <span class="text-xs font-semibold leading-relaxed">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        /* ==========================================================================
+           3. TAB NAVIGATION CONTROLLER
+           ========================================================================== */
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            const target = document.getElementById(tabId);
+            if (target) target.classList.remove('hidden');
+
+            const navTabs = ['sales', 'stock', 'history'];
+            navTabs.forEach(tab => {
+                const navBtn = document.getElementById(`nav-tab-${tab}`);
+                const mobileBtn = document.getElementById(`mobile-tab-${tab}`);
+                
+                if (`tab-${tab}` === tabId) {
+                    navBtn?.classList.add('bg-white', 'text-emerald-700', 'shadow-sm');
+                    navBtn?.classList.remove('text-slate-600', 'hover:text-slate-900');
+                    
+                    mobileBtn?.classList.add('bg-emerald-100', 'text-emerald-800');
+                    mobileBtn?.classList.remove('text-slate-600');
+                } else {
+                    navBtn?.classList.remove('bg-white', 'text-emerald-700', 'shadow-sm');
+                    navBtn?.classList.add('text-slate-600', 'hover:text-slate-900');
+
+                    mobileBtn?.classList.remove('bg-emerald-100', 'text-emerald-800');
+                    mobileBtn?.classList.add('text-slate-600');
+                }
+            });
+
+            if (tabId === 'tab-sales') {
+                setTimeout(() => document.getElementById('barcode-scanner-input')?.focus(), 100);
+            }
+
+            renderAll();
+        }
+
+        /* ==========================================================================
+           4. RENDERERS
+           ========================================================================== */
+        function renderAll() {
+            renderStats();
+            renderFarmerOptions();
+            renderCart();
+            renderStockCards();
+            renderSalesHistory();
+            lucide.createIcons();
+        }
+
+        function renderStats() {
+            let totalVarieties = state.stocks.length;
+            let totalAvailable = 0;
+            let totalSold = 0;
+
+            state.stocks.forEach(p => {
+                p.barcodes.forEach(b => {
+                    if (b.status === 'SATILDI') totalSold++;
+                    else totalAvailable++;
+                });
+            });
+
+            const totalCapacity = totalVarieties * MAX_PRODUCT_CAPACITY;
+            const occupancy = totalCapacity > 0 ? Math.round(((totalAvailable + totalSold) / totalCapacity) * 100) : 0;
+
+            const totalVarEl = document.getElementById('stat-total-varieties');
+            const availStockEl = document.getElementById('stat-available-stock');
+            const totalSoldEl = document.getElementById('stat-total-sold');
+            const occPercentEl = document.getElementById('stat-occupancy-percent');
+            const occBarEl = document.getElementById('stat-occupancy-bar');
+
+            if (totalVarEl) totalVarEl.innerText = totalVarieties;
+            if (availStockEl) availStockEl.innerText = totalAvailable + ' Adet';
+            if (totalSoldEl) totalSoldEl.innerText = totalSold + ' Adet';
+            if (occPercentEl) occPercentEl.innerText = occupancy + '%';
+            if (occBarEl) occBarEl.style.width = occupancy + '%';
+        }
+
+        function renderFarmerOptions() {
+            const datalist = document.getElementById('farmers-list');
+            const prodDatalist = document.getElementById('existing-products-list');
+
+            if (datalist) {
+                datalist.innerHTML = '';
+                const farmersSet = new Set();
+                state.sales.forEach(s => farmersSet.add(s.farmerName));
+                if (state.selectedFarmer) farmersSet.add(state.selectedFarmer);
+
+                farmersSet.forEach(farmer => {
+                    if (farmer) {
+                        const opt = document.createElement('option');
+                        opt.value = farmer;
+                        datalist.appendChild(opt);
+                    }
+                });
+            }
+
+            if (prodDatalist) {
+                prodDatalist.innerHTML = '';
+                state.stocks.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.name;
+                    prodDatalist.appendChild(opt);
+                });
+            }
+        }
+
+        /* ==========================================================================
+           5. TAB 1: OTOMATİK SATIŞ & SEPET MANTIĞI
+           ========================================================================== */
+        function handleFarmerChange() {
+            const input = document.getElementById('farmer-input');
+            const val = toTrUppercase(input ? input.value.trim() : '');
+            state.selectedFarmer = val;
+            saveState();
+            renderCart();
+        }
+
+        function handleBarcodeScan(e) {
+            e.preventDefault();
+            const input = document.getElementById('barcode-scanner-input');
+            const barcode = toTrUppercase(input ? input.value.trim() : '');
+
+            // Rule 1: Must select farmer first
+            if (!state.selectedFarmer) {
+                showToast('Lütfen önce satış yapılacak çiftçiyi seçin!', 'warning');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                return;
+            }
+
+            if (!barcode) {
+                showToast('Lütfen okutulan GTS barkodunu kontrol edin!', 'warning');
+                if (input) input.focus();
+                return;
+            }
+
+            // Rule 2: Check if barcode exists and is available in stock
+            let foundProduct = null;
+            let foundBarcodeObj = null;
+
+            for (const prod of state.stocks) {
+                const bObj = prod.barcodes.find(b => b.code === barcode);
+                if (bObj) {
+                    foundProduct = prod;
+                    foundBarcodeObj = bObj;
+                    break;
+                }
+            }
+
+            // Case A: Barcode not found in stock database
+            if (!foundBarcodeObj) {
+                showToast(`Barkod [${barcode}] stok veritabanında bulunamadı!`, 'error');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                return;
+            }
+
+            // Case B: Barcode already sold
+            if (foundBarcodeObj.status === 'SATILDI') {
+                showToast(`Barkod [${barcode}] daha önce ${foundBarcodeObj.farmerName || 'başka bir çiftçiye'} satılmış!`, 'error');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                return;
+            }
+
+            // Case C: Barcode already in current temporary cart
+            const inCart = state.cart.some(item => item.barcode === barcode);
+            if (inCart) {
+                showToast(`Barkod [${barcode}] zaten sepete eklenmiş!`, 'warning');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                return;
+            }
+
+            // Success: Add to cart
+            state.cart.push({
+                barcode: foundBarcodeObj.code,
+                productName: foundProduct.name,
+                productId: foundProduct.id
+            });
+
+            saveState();
+            showToast(`[${foundProduct.name}] barkodu sepete eklendi.`, 'success');
+            
+            // Auto-clear & keep focus for continuous rapid scanning
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const farmerLabel = document.getElementById('current-cart-farmer-label');
+            const completeBtn = document.getElementById('btn-complete-sale');
+            const totalCountEl = document.getElementById('cart-total-count');
+
+            if (!container) return;
+
+            if (!state.selectedFarmer) {
+                if (farmerLabel) farmerLabel.innerHTML = `Seçili Çiftçi: <span class="font-semibold text-slate-400">Henüz Seçilmedi</span>`;
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-slate-400 py-12">
+                        <i data-lucide="user-plus" class="w-12 h-12 mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Lütfen sol taraftan bir çiftçi seçin veya yazın.</p>
+                    </div>
+                `;
+                if (completeBtn) completeBtn.disabled = true;
+                if (totalCountEl) totalCountEl.innerText = '0 Adet';
+                return;
+            }
+
+            if (farmerLabel) farmerLabel.innerHTML = `Seçili Çiftçi: <span class="font-bold text-emerald-700">${state.selectedFarmer}</span>`;
+
+            if (state.cart.length === 0) {
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-slate-400 py-12">
+                        <i data-lucide="shopping-cart" class="w-12 h-12 mb-2 text-slate-300"></i>
+                        <p class="text-xs font-semibold">Sepetiniz boş. Barkod okutmaya başlayın.</p>
+                    </div>
+                `;
+                if (completeBtn) completeBtn.disabled = true;
+                if (totalCountEl) totalCountEl.innerText = '0 Adet';
+                return;
+            }
+
+            if (completeBtn) completeBtn.disabled = false;
+            if (totalCountEl) totalCountEl.innerText = `${state.cart.length} Adet`;
+
+            // Group cart items by product name
+            const grouped = {};
+            state.cart.forEach(item => {
+                if (!grouped[item.productName]) grouped[item.productName] = [];
+                grouped[item.productName].push(item.barcode);
+            });
+
+            let html = '<div class="space-y-4">';
+            Object.keys(grouped).forEach(prodName => {
+                const barcodes = grouped[prodName];
+                html += `
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                            <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                <i data-lucide="package" class="w-4 h-4 text-emerald-600"></i>
+                                ${prodName}
+                            </span>
+                            <span class="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                                ${barcodes.length} Adet
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            ${barcodes.map(code => `
+                                <div class="bg-white px-2.5 py-1.5 border border-slate-200 rounded-lg flex items-center justify-between font-mono text-xs text-slate-700">
+                                    <span>${code}</span>
+                                    <button type="button" onclick="removeFromCart('${code}')" class="text-slate-400 hover:text-red-500 transition-colors p-0.5">
+                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function removeFromCart(barcode) {
+            state.cart = state.cart.filter(i => i.barcode !== barcode);
+            saveState();
+            renderCart();
+            showToast('Ürün sepetten çıkarıldı.', 'info');
+        }
+
+        function clearCurrentCart() {
+            state.cart = [];
+            saveState();
+            renderCart();
+            showToast('Sepet temizlendi.', 'info');
+        }
+
+        function completeSale() {
+            if (!state.selectedFarmer) return;
+            if (state.cart.length === 0) return;
+
+            const saleDate = new Date().toISOString();
+
+            // Mark barcodes as SATILDI
+            state.cart.forEach(item => {
+                for (const prod of state.stocks) {
+                    const bObj = prod.barcodes.find(b => b.code === item.barcode);
+                    if (bObj) {
+                        bObj.status = 'SATILDI';
+                        bObj.farmerName = state.selectedFarmer;
+                        bObj.date = saleDate;
+                        break;
+                    }
+                }
+            });
+
+            // Add transaction to Sales History
+            state.sales.unshift({
+                id: 'sale_' + Date.now(),
+                farmerName: state.selectedFarmer,
+                date: saleDate,
+                items: [...state.cart]
+            });
+
+            // Reset cart
+            const soldCount = state.cart.length;
+            state.cart = [];
+
+            saveState();
+            renderAll();
+            showToast(`Satış tamamlandı! ${soldCount} adet ürün düşüldü.`, 'success');
+        }
+
+        /* ==========================================================================
+           6. TAB 2: STOK & GTS BARKOD YÖNETİMİ
+           ========================================================================== */
+        function handleAddStock(e) {
+            e.preventDefault();
+
+            try {
+                const prodNameInput = document.getElementById('stock-product-name');
+                const textarea = document.getElementById('stock-barcodes-textarea');
+
+                if (!prodNameInput || !textarea) return;
+
+                const prodName = toTrUppercase(prodNameInput.value.trim());
+                const rawText = textarea.value.trim();
+
+                if (!prodName) {
+                    showToast('Lütfen ürün / gübre adını girin!', 'warning');
+                    return;
+                }
+
+                if (!rawText) {
+                    showToast('Lütfen en az bir adet GTS barkodu girin!', 'warning');
+                    return;
+                }
+
+                // Extract barcodes using split regex
+                const inputBarcodes = rawText
+                    .split(/[\n,\r\s]+/)
+                    .map(b => toTrUppercase(b.trim()))
+                    .filter(b => b.length > 0);
+
+                if (inputBarcodes.length === 0) {
+                    showToast('Geçerli bir barkod metni bulunamadı!', 'warning');
+                    return;
+                }
+
+                // Find or Create Product Group
+                let product = state.stocks.find(p => p.name === prodName);
+                if (!product) {
+                    product = {
+                        id: 'prod_' + Date.now(),
+                        name: prodName,
+                        capacity: MAX_PRODUCT_CAPACITY,
+                        barcodes: []
+                    };
+                    state.stocks.push(product);
+                }
+
+                // Capacity Guard
+                if (product.barcodes.length >= MAX_PRODUCT_CAPACITY) {
+                    showToast(`[${prodName}] için maks kapasite (${MAX_PRODUCT_CAPACITY} adet) dolmuştur!`, 'error');
+                    return;
+                }
+
+                // Existing codes set for deduplication
+                const existingAllCodes = new Set();
+                state.stocks.forEach(p => p.barcodes.forEach(b => existingAllCodes.add(b.code)));
+
+                let addedCount = 0;
+                let duplicateCount = 0;
+
+                for (const code of inputBarcodes) {
+                    if (product.barcodes.length >= MAX_PRODUCT_CAPACITY) {
+                        showToast(`Ürün ${MAX_PRODUCT_CAPACITY} adet kapasite sınırına ulaştı. Kalan barkodlar atlandı.`, 'warning');
+                        break;
+                    }
+
+                    if (existingAllCodes.has(code)) {
+                        duplicateCount++;
+                    } else {
+                        product.barcodes.push({
+                            code: code,
+                            status: 'STOKTA',
+                            farmerName: null,
+                            date: null
+                        });
+                        existingAllCodes.add(code);
+                        addedCount++;
+                    }
+                }
+
+                saveState();
+                renderAll();
+
+                textarea.value = '';
+                
+                if (addedCount > 0) {
+                    showToast(`${addedCount} adet yeni barkod [${prodName}] stoklarına eklendi.${duplicateCount > 0 ? ` (${duplicateCount} mükerrer atlandı)` : ''}`, 'success');
+                } else if (duplicateCount > 0) {
+                    showToast(`Girilen tüm barkodlar (${duplicateCount} adet) sistemde zaten kayıtlı!`, 'warning');
+                }
+            } catch (err) {
+                console.error('Stok ekleme hatası:', err);
+                showToast('Stok eklenirken bir hata oluştu: ' + err.message, 'error');
+            }
+        }
+
+        function renderStockCards() {
+            const container = document.getElementById('stock-cards-grid');
+            if (!container) return;
+
+            const searchInput = document.getElementById('stock-search-input');
+            const searchVal = toTrUppercase(searchInput ? searchInput.value.trim() : '');
+
+            if (state.stocks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400">
+                        <i data-lucide="boxes" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
+                        <p class="text-sm font-semibold">Sistemde kayıtlı ürün veya stok bulunmamaktadır.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            state.stocks.forEach(product => {
+                const matchesProdName = product.name.includes(searchVal);
+                const matchingBarcodes = product.barcodes.filter(b => b.code.includes(searchVal));
+
+                if (searchVal && !matchesProdName && matchingBarcodes.length === 0) {
+                    return;
+                }
+
+                const total = product.barcodes.length;
+                const sold = product.barcodes.filter(b => b.status === 'SATILDI').length;
+                const available = total - sold;
+                const fillPercent = Math.round((total / MAX_PRODUCT_CAPACITY) * 100);
+
+                const barcodesToDisplay = searchVal && !matchesProdName ? matchingBarcodes : product.barcodes;
+
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden transition-all">
+                        <div class="p-5 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50 border-b border-slate-100">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-base text-slate-900">${product.name}</h3>
+                                    <span class="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">Max ${MAX_PRODUCT_CAPACITY}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 font-medium">
+                                    Toplam: <span class="font-bold text-slate-800">${total}</span> | 
+                                    Kalan: <span class="font-bold text-emerald-600">${available}</span> | 
+                                    Satılan: <span class="font-bold text-rose-600">${sold}</span>
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-3 w-full sm:w-auto">
+                                <div class="w-32 bg-slate-200 rounded-full h-2.5 overflow-hidden hidden md:block">
+                                    <div class="bg-emerald-600 h-2.5 rounded-full" style="width: ${fillPercent}%"></div>
+                                </div>
+                                <button type="button" onclick="deleteProductGroup('${product.id}')" class="px-3 py-1.5 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center gap-1 transition-all">
+                                    <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                                    Grubu Sil
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-5 max-h-60 overflow-y-auto">
+                            ${barcodesToDisplay.length === 0 ? `
+                                <p class="text-xs text-slate-400 italic">Bu grupta barkod bulunmamaktadır.</p>
+                            ` : `
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                    ${barcodesToDisplay.map(b => `
+                                        <div class="p-2 rounded-xl border ${b.status === 'SATILDI' ? 'bg-rose-50/50 border-rose-200 text-rose-900' : 'bg-emerald-50/50 border-emerald-200 text-emerald-900'} flex items-center justify-between text-xs">
+                                            <div class="overflow-hidden">
+                                                <p class="font-mono font-bold tracking-tight text-[11px]">${b.code}</p>
+                                                <p class="text-[10px] ${b.status === 'SATILDI' ? 'text-rose-600 font-medium' : 'text-emerald-600 font-medium'} truncate">
+                                                    ${b.status === 'SATILDI' ? `SATILDI - ${b.farmerName || 'Çiftçi'}` : 'STOKTA (Aktif)'}
+                                                </p>
+                                            </div>
+                                            <button type="button" onclick="deleteSingleBarcode('${product.id}', '${b.code}')" class="text-slate-400 hover:text-red-600 p-1">
+                                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function deleteSingleBarcode(productId, barcodeCode) {
+            const prod = state.stocks.find(p => p.id === productId);
+            if (!prod) return;
+
+            prod.barcodes = prod.barcodes.filter(b => b.code !== barcodeCode);
+            saveState();
+            renderAll();
+            showToast(`[${barcodeCode}] barkodu silindi.`, 'info');
+        }
+
+        function deleteProductGroup(productId) {
+            const prod = state.stocks.find(p => p.id === productId);
+            if (!prod) return;
+
+            if (confirm(`[${prod.name}] ürün grubunu ve tüm barkodlarını silmek istediğinize emin misiniz?`)) {
+                state.stocks = state.stocks.filter(p => p.id !== productId);
+                saveState();
+                renderAll();
+                showToast(`[${prod.name}] grubu tamamen silindi.`, 'info');
+            }
+        }
+
+        function copyAllAvailableBarcodes() {
+            let availableBarcodes = [];
+
+            state.stocks.forEach(p => {
+                p.barcodes.forEach(b => {
+                    if (b.status === 'STOKTA') availableBarcodes.push(b.code);
+                });
+            });
+
+            if (availableBarcodes.length === 0) {
+                showToast('Depoda kopyalanacak STOKTA durumunda barkod yok!', 'warning');
+                return;
+            }
+
+            const textToCopy = availableBarcodes.join('\n');
+            copyTextToClipboard(textToCopy);
+            showToast(`${availableBarcodes.length} adet aktif stok barkodu kopyalandı!`, 'success');
+        }
+
+        /* ==========================================================================
+           7. TAB 3: GTS ÇİFTÇİ SATIŞ GEÇMİŞİ & GÜNLÜK FATURA RAPORU
+           ========================================================================== */
+        function setHistoryFilter(filter) {
+            state.historyFilter = filter;
+            
+            ['all', 'today', 'week'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn?.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                    btn?.classList.remove('text-slate-500');
+                } else {
+                    btn?.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                    btn?.classList.add('text-slate-500');
+                }
+            });
+
+            renderSalesHistory();
+        }
+
+        function renderSalesHistory() {
+            const container = document.getElementById('history-sales-list');
+            if (!container) return;
+
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            const filteredSales = state.sales.filter(sale => {
+                const saleDateObj = new Date(sale.date);
+                const saleDateStr = saleDateObj.toISOString().split('T')[0];
+
+                if (state.historyFilter === 'today') {
+                    return saleDateStr === todayStr;
+                } else if (state.historyFilter === 'week') {
+                    const diffTime = Math.abs(now - saleDateObj);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays <= 7;
+                }
+                return true;
+            });
+
+            if (filteredSales.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400">
+                        <i data-lucide="file-x-2" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
+                        <p class="text-sm font-semibold">Seçilen filtre kriterlerine uygun satış kaydı bulunamadı.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+
+            filteredSales.forEach(sale => {
+                const formattedDate = new Date(sale.date).toLocaleString('tr-TR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                const grouped = {};
+                sale.items.forEach(item => {
+                    if (!grouped[item.productName]) grouped[item.productName] = [];
+                    grouped[item.productName].push(item.barcode);
+                });
+
+                html += `
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold text-sm">
+                                    👨‍🌾
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900">${sale.farmerName}</h3>
+                                    <p class="text-xs text-slate-400">${formattedDate}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="copySingleSaleRecord('${sale.id}')" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                    Satış Geçmişini Kopyala
+                                </button>
+                                <button type="button" onclick="cancelAndDeleteSale('${sale.id}')" class="px-3 py-1.5 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                    Satışı Komple Sil / İptal Et
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            ${Object.keys(grouped).map(prodName => {
+                                const codes = grouped[prodName];
+                                return `
+                                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60 text-xs">
+                                        <div class="flex justify-between items-center mb-1.5 font-bold text-slate-800">
+                                            <span>📦 ${prodName}</span>
+                                            <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full text-[10px]">${codes.length} Adet</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            ${codes.map(c => `
+                                                <span class="bg-white border border-slate-200 px-2 py-1 rounded font-mono text-[11px] text-slate-700">🔑 ${c}</span>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <div class="text-right text-xs font-bold text-slate-700 pt-1">
+                            Toplam: ${sale.items.length} Adet Ürün / Barkod
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function cancelAndDeleteSale(saleId) {
+            const sale = state.sales.find(s => s.id === saleId);
+            if (!sale) return;
+
+            if (confirm(`[${sale.farmerName}] isimli çiftçiye ait satışı iptal etmek istediğinize emin misiniz?\nBu işlem sonucunda satıştaki tüm barkodlar tekrar YEŞİL / STOKTA durumuna dönecektir.`)) {
+                // Restore barcodes to STOKTA
+                sale.items.forEach(item => {
+                    for (const prod of state.stocks) {
+                        const bObj = prod.barcodes.find(b => b.code === item.barcode);
+                        if (bObj) {
+                            bObj.status = 'STOKTA';
+                            bObj.farmerName = null;
+                            bObj.date = null;
+                            break;
+                        }
+                    }
+                });
+
+                // Remove sale record
+                state.sales = state.sales.filter(s => s.id !== saleId);
+
+                saveState();
+                renderAll();
+                showToast('Satış başarıyla iptal edildi, barkodlar stoklara geri döküldü.', 'success');
+            }
+        }
+
+        /* ==========================================================================
+           8. PANOYA KOPYALAMA İŞLEVLERİ & ŞABLON FORMATI
+           ========================================================================== */
+        function generateTemplateText(farmerName, items) {
+            const grouped = {};
+            items.forEach(item => {
+                if (!grouped[item.productName]) grouped[item.productName] = [];
+                grouped[item.productName].push(item.barcode);
+            });
+
+            let lines = [];
+            lines.push(`👨‍🌾 ÇİFTÇİ: ${farmerName}`);
+
+            Object.keys(grouped).forEach(prodName => {
+                const barcodes = grouped[prodName];
+                lines.push(`📦 ${prodName} (${barcodes.length} Adet)`);
+                barcodes.forEach(code => {
+                    lines.push(`🔑 ${code}`);
+                });
+            });
+
+            lines.push(`Toplam: ${items.length} Adet Ürün / Barkod`);
+
+            return lines.join('\n');
+        }
+
+        function copyCartToClipboard() {
+            if (!state.selectedFarmer) {
+                showToast('Kopyalanacak seçili bir çiftçi yok!', 'warning');
+                return;
+            }
+
+            if (state.cart.length === 0) {
+                showToast('Sepette kopyalanacak ürün bulunmuyor!', 'warning');
+                return;
+            }
+
+            const textToCopy = generateTemplateText(state.selectedFarmer, state.cart);
+            copyTextToClipboard(textToCopy);
+            showToast('Sepet bilgileri şablona uygun kopyalandı!', 'success');
+        }
+
+        function copySingleSaleRecord(saleId) {
+            const sale = state.sales.find(s => s.id === saleId);
+            if (!sale) return;
+
+            const textToCopy = generateTemplateText(sale.farmerName, sale.items);
+            copyTextToClipboard(textToCopy);
+            showToast(`[${sale.farmerName}] satış geçmişi kopyalandı!`, 'success');
+        }
+
+        function copyTextToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Kopyalama hatası:', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
